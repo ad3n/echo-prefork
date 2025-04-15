@@ -21,6 +21,8 @@ const (
 	preforkVal = "1"
 )
 
+var childs = make(map[int]*exec.Cmd)
+
 type prefork struct {
 	engine *echo.Echo
 }
@@ -31,6 +33,10 @@ func New(engine *echo.Echo) *prefork {
 
 func IsChild() bool {
 	return os.Getenv(preforkKey) == preforkVal
+}
+
+func TotalChild() int {
+	return len(childs)
 }
 
 func (p prefork) StartTLS(address string, tlsConfig *tls.Config) error {
@@ -70,7 +76,6 @@ func fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
 	}
 
 	maxProcs := runtime.GOMAXPROCS(0)
-	childs := make(map[int]*exec.Cmd)
 	channel := make(chan child, maxProcs)
 
 	defer func() {
@@ -122,8 +127,7 @@ func watchMaster() {
 		os.Exit(1)
 	}
 
-	const watchInterval = 500 * time.Millisecond
-	for range time.NewTicker(watchInterval).C {
+	for range time.NewTicker(500 * time.Second).C {
 		if os.Getppid() == 1 {
 			os.Exit(1)
 		}
