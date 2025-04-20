@@ -61,6 +61,12 @@ func fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
 
 		if tlsConfig != nil {
 			ln = tls.NewListener(ln, tlsConfig)
+
+			engine.Listener = ln
+
+			go watchMaster()
+
+			return engine.Server.Serve(engine.Listener)
 		}
 
 		engine.Listener = ln
