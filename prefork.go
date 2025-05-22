@@ -90,7 +90,7 @@ func fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
 		}
 
 		var p *os.Process
-		p, err = os.FindProcess(os.Getppid())
+		p, err = os.FindProcess(os.Getpid())
 		if err != nil {
 			log.Errorf("prefork: failed to get parent process: %s", err.Error())
 		}
