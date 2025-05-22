@@ -35,10 +35,6 @@ func IsChild() bool {
 	return os.Getenv(preforkKey) == preforkVal
 }
 
-func TotalChild() int {
-	return len(childs)
-}
-
 func (p prefork) StartTLS(address string, tlsConfig *tls.Config) error {
 	return fork(p.engine, address, tlsConfig)
 }
@@ -92,6 +88,14 @@ func fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
 				}
 			}
 		}
+
+		var p *os.Process
+		p, err = os.FindProcess(os.Getppid())
+		if err != nil {
+			log.Errorf("prefork: failed to get parent process: %s", err.Error())
+		}
+
+		p.Kill()
 	}()
 
 	pids := make([]int, 0, maxProcs)
