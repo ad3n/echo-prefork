@@ -22,14 +22,14 @@ const (
 	preforkVal = "1"
 )
 
-type prefork struct {
+type Prefork struct {
 	engine *echo.Echo
 	childs map[int]*exec.Cmd
 	mutex  sync.RWMutex
 }
 
-func New(engine *echo.Echo) *prefork {
-	return &prefork{
+func New(engine *echo.Echo) *Prefork {
+	return &Prefork{
 		engine: engine,
 		childs: make(map[int]*exec.Cmd),
 		mutex:  sync.RWMutex{},
@@ -40,15 +40,15 @@ func IsChild() bool {
 	return os.Getenv(preforkKey) == preforkVal
 }
 
-func (p *prefork) StartTLS(address string, tlsConfig *tls.Config) error {
+func (p *Prefork) StartTLS(address string, tlsConfig *tls.Config) error {
 	return p.fork(p.engine, address, tlsConfig)
 }
 
-func (p *prefork) Start(address string) error {
+func (p *Prefork) Start(address string) error {
 	return p.fork(p.engine, address, nil)
 }
 
-func (p *prefork) KillChilds() {
+func (p *Prefork) KillChilds() {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 	for _, proc := range p.childs {
@@ -60,7 +60,7 @@ func (p *prefork) KillChilds() {
 	}
 }
 
-func (p *prefork) fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
+func (p *Prefork) fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
 	var ln net.Listener
 	var err error
 
