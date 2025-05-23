@@ -94,7 +94,7 @@ func (p *Prefork) fork(engine *echo.Echo, address string, tlsConfig *tls.Config)
 		pid int
 	}
 
-	maxProcs := runtime.NumCPU()
+	maxProcs := runtime.GOMAXPROCS(0)
 	channel := make(chan child, maxProcs)
 
 	defer func() {
