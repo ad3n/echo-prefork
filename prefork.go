@@ -43,6 +43,20 @@ func (p prefork) Start(address string) error {
 	return fork(p.engine, address, nil)
 }
 
+func TotalChild() int {
+	return len(childs)
+}
+
+func KillChilds() {
+	for _, proc := range childs {
+		if err := proc.Process.Kill(); err != nil {
+			if !errors.Is(err, os.ErrProcessDone) {
+				log.Errorf("prefork: failed to kill child: %s", err.Error())
+			}
+		}
+	}
+}
+
 func fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
 	var ln net.Listener
 	var err error
