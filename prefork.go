@@ -58,19 +58,6 @@ func TotalChild() int {
 	return len(childs)
 }
 
-func KillChilds() {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	for _, proc := range childs {
-		if err := proc.Process.Kill(); err != nil {
-			if !errors.Is(err, os.ErrProcessDone) {
-				log.Errorf("prefork: failed to kill child: %s", err.Error())
-			}
-		}
-	}
-}
-
 func fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
 	var ln net.Listener
 	var err error
@@ -172,8 +159,12 @@ func watchMaster() {
 		os.Exit(1)
 	}
 
-	for range time.NewTicker(500 * time.Second).C {
+	for range time.NewTicker(5 * time.Second).C {
 		if os.Getppid() == 1 {
+			os.Exit(1)
+		}
+
+		if runtime.NumCPU() != len(childs) {
 			os.Exit(1)
 		}
 	}
