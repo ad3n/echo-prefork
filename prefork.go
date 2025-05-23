@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -21,7 +22,10 @@ const (
 	preforkVal = "1"
 )
 
-var childs = make(map[int]*exec.Cmd)
+var (
+	childs = make(map[int]*exec.Cmd)
+	mutex  = sync.RWMutex{}
+)
 
 type prefork struct {
 	engine *echo.Echo
@@ -44,10 +48,20 @@ func (p prefork) Start(address string) error {
 }
 
 func TotalChild() int {
+	if IsChild() {
+		return runtime.NumCPU()
+	}
+
+	mutex.RLock()
+	defer mutex.RUnlock()
+
 	return len(childs)
 }
 
 func KillChilds() {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
 	for _, proc := range childs {
 		if err := proc.Process.Kill(); err != nil {
 			if !errors.Is(err, os.ErrProcessDone) {
@@ -95,6 +109,9 @@ func fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
 	channel := make(chan child, maxProcs)
 
 	defer func() {
+		mutex.RLock()
+		defer mutex.RUnlock()
+
 		for _, proc := range childs {
 			if err = proc.Process.Kill(); err != nil {
 				if !errors.Is(err, os.ErrProcessDone) {
@@ -130,6 +147,10 @@ func fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
 		}
 
 		pid := cmd.Process.Pid
+
+		mutex.Lock()
+		defer mutex.Unlock()
+
 		childs[pid] = cmd
 		pids = append(pids, pid)
 
