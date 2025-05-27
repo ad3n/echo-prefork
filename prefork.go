@@ -9,10 +9,10 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
 	"github.com/libp2p/go-reuseport"
 )
 
@@ -39,31 +39,27 @@ func IsChild() bool {
 	return os.Getenv(preforkKey) == preforkVal
 }
 
-func (p *Prefork) StartTLS(address string, tlsConfig *tls.Config) error {
-	return p.fork(p.engine, address, tlsConfig)
+func (p *Prefork) StartTLS(workers int, address string, tlsConfig *tls.Config) error {
+	return p.fork(p.engine, workers, address, tlsConfig)
 }
 
-func (p *Prefork) Start(address string) error {
-	return p.fork(p.engine, address, nil)
-}
-
-func (p *Prefork) Childs() map[int]*exec.Cmd {
-	return p.childs
+func (p *Prefork) Start(workers int, address string) error {
+	return p.fork(p.engine, workers, address, nil)
 }
 
 func (p *Prefork) KillChilds() {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
-	for _, proc := range p.childs {
-		if err := proc.Process.Kill(); err != nil {
-			log.Errorf("prefork: failed to kill child: %s", err.Error())
-		}
 
-		fmt.Println("killed", proc.Process.Pid)
+	for pid := range p.childs {
+		pgid := -pid
+		if err := syscall.Kill(pgid, syscall.SIGTERM); err != nil {
+			fmt.Printf("prefork: failed to kill child group %d: %s\n", pid, err.Error())
+		}
 	}
 }
 
-func (p *Prefork) fork(engine *echo.Echo, address string, tlsConfig *tls.Config) error {
+func (p *Prefork) fork(engine *echo.Echo, workers int, address string, tlsConfig *tls.Config) error {
 	var ln net.Listener
 	var err error
 
@@ -97,8 +93,7 @@ func (p *Prefork) fork(engine *echo.Echo, address string, tlsConfig *tls.Config)
 		pid int
 	}
 
-	maxProcs := runtime.GOMAXPROCS(0)
-	channel := make(chan child, maxProcs)
+	channel := make(chan child, workers)
 
 	defer func() {
 		p.KillChilds()
@@ -106,11 +101,14 @@ func (p *Prefork) fork(engine *echo.Echo, address string, tlsConfig *tls.Config)
 		close(channel)
 	}()
 
-	pids := make([]int, 0, maxProcs)
-	for range maxProcs {
+	pids := make([]int, 0, workers)
+	for range workers {
 		cmd := exec.Command(os.Args[0], os.Args[1:]...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			Setpgid: true,
+		}
 
 		env := strings.Builder{}
 		env.WriteString(preforkKey)
