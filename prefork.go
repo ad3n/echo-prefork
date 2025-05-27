@@ -53,7 +53,13 @@ func (p *Prefork) KillChilds() {
 
 	for pid := range p.childs {
 		pgid := -pid
-		if err := syscall.Kill(pgid, syscall.SIGTERM); err != nil {
+		err := syscall.Kill(pgid, syscall.SIGTERM)
+		if err == nil {
+			continue
+		}
+
+		err = syscall.Kill(pid, syscall.SIGTERM)
+		if err != nil {
 			fmt.Printf("prefork: failed to kill child group %d: %s\n", pid, err.Error())
 		}
 	}
@@ -108,6 +114,7 @@ func (p *Prefork) fork(engine *echo.Echo, workers int, address string, tlsConfig
 		cmd.Stderr = os.Stderr
 		cmd.SysProcAttr = &syscall.SysProcAttr{
 			Setpgid: true,
+			Pgid:    0,
 		}
 
 		env := strings.Builder{}
