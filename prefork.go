@@ -124,9 +124,9 @@ func (p *Prefork) fork(engine *echo.Echo, workers int, address string, tlsConfig
 		pid := cmd.Process.Pid
 
 		p.mutex.Lock()
-		defer p.mutex.Unlock()
-
 		p.childs[pid] = cmd
+		p.mutex.Unlock()
+
 		pids = append(pids, pid)
 
 		go func() {
