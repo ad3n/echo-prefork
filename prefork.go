@@ -2,7 +2,6 @@ package prefork
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -53,9 +52,7 @@ func (p *Prefork) KillChilds() {
 	defer p.mutex.RUnlock()
 	for _, proc := range p.childs {
 		if err := proc.Process.Kill(); err != nil {
-			if !errors.Is(err, os.ErrProcessDone) {
-				log.Errorf("prefork: failed to kill child: %s", err.Error())
-			}
+			log.Errorf("prefork: failed to kill child: %s", err.Error())
 		}
 	}
 }
