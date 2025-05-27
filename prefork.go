@@ -48,20 +48,40 @@ func (p *Prefork) Start(workers int, address string) error {
 }
 
 func (p *Prefork) KillChilds() {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 
-	for pid := range p.childs {
-		pgid := -pid
-		err := syscall.Kill(pgid, syscall.SIGTERM)
-		if err == nil {
-			continue
-		}
-
-		err = syscall.Kill(pid, syscall.SIGTERM)
+	for pid, cmd := range p.childs {
+		err := syscall.Kill(-pid, syscall.SIGTERM)
 		if err != nil {
-			fmt.Printf("prefork: failed to kill child group %d: %s\n", pid, err.Error())
+			fmt.Printf("prefork: failed to kill PGID %d: %s\n", pid, err.Error())
+
+			if cmd != nil && cmd.Process != nil {
+				err = cmd.Process.Kill()
+				if err != nil {
+					fmt.Printf("prefork: failed to directly kill PID %d: %s\n", pid, err.Error())
+				} else {
+					fmt.Printf("prefork: directly killed PID %d\n", pid)
+				}
+			}
+		} else {
+			fmt.Printf("prefork: sent SIGTERM to PGID %d\n", pid)
 		}
+	}
+
+	p.reapZombies()
+}
+
+func (p *Prefork) reapZombies() {
+	for {
+		var status syscall.WaitStatus
+		var rusage syscall.Rusage
+		pid, err := syscall.Wait4(-1, &status, syscall.WNOHANG, &rusage)
+		if pid <= 0 || err != nil {
+			break
+		}
+
+		fmt.Printf("reaped zombie child PID %d\n", pid)
 	}
 }
 
