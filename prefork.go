@@ -123,8 +123,6 @@ func (p *Prefork) fork(engine *echo.Echo, workers int, address string, tlsConfig
 
 	defer func() {
 		p.KillChilds()
-
-		close(channel)
 	}()
 
 	pids := make([]int, 0, workers)
