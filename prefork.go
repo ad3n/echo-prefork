@@ -47,6 +47,10 @@ func (p *Prefork) Start(address string) error {
 	return p.fork(p.engine, address, nil)
 }
 
+func (p *Prefork) Childs() map[int]*exec.Cmd {
+	return p.childs
+}
+
 func (p *Prefork) KillChilds() {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
