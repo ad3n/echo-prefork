@@ -54,6 +54,8 @@ func (p *Prefork) KillChilds() {
 		if err := proc.Process.Kill(); err != nil {
 			log.Errorf("prefork: failed to kill child: %s", err.Error())
 		}
+
+		fmt.Println("killed", proc.Process.Pid)
 	}
 }
 
