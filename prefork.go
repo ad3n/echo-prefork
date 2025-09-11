@@ -166,7 +166,6 @@ func (p *Prefork) fork(engine *echo.Echo, workers int, address string, tlsConfig
 
 func printPreforkBanner(masterPID, workers int, pids []int, address string) {
 	green := "\033[32m"
-	yellow := "\033[33m"
 	blue := "\033[34m"
 	reset := "\033[0m"
 	bold := "\033[1m"
@@ -176,21 +175,21 @@ func printPreforkBanner(masterPID, workers int, pids []int, address string) {
    / ____/____/ /_  ____
   / __/ / ___/ __ \/ __ \
  / /___/ /__/ / / / /_/ /
-/_____/\___/_/ /_/\____/ %s%sPrefork%s
+/_____/\___/_/ /_/\____/%s%sPrefork%s
 `, green, blue, bold, reset)
 
 	fmt.Print(banner)
 
-	fmt.Println(bold + blue + "=======================================" + reset)
+	fmt.Println(bold + "=======================================" + reset)
 	fmt.Printf("%sMaster PID   : %s%d%s\n", bold, green, masterPID, reset)
 	fmt.Printf("%sListening on : %s%s%s\n", bold, green, address, reset)
 	fmt.Printf("%sWorkers      : %s%d%s\n", bold, green, workers, reset)
-	fmt.Println(bold + blue + "Child PIDs   :" + reset)
+	fmt.Println(bold + "Child PIDs   :" + reset)
 	for _, pid := range pids {
-		fmt.Printf("%s   - %s%d%s\n", bold, yellow, pid, reset)
+		fmt.Printf("    - %s%d%s\n", blue, pid, reset)
 	}
 
-	fmt.Println(bold + blue + "=======================================" + reset)
+	fmt.Println()
 }
 
 func watchMaster() {
