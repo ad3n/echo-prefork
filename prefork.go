@@ -165,13 +165,11 @@ func (p *Prefork) fork(engine *echo.Echo, workers int, address string, tlsConfig
 }
 
 func printPreforkBanner(masterPID, workers int, pids []int, address string) {
-	const (
-		green  = "\033[32m"
-		yellow = "\033[33m"
-		blue   = "\033[34m"
-		reset  = "\033[0m"
-		bold   = "\033[1m"
-	)
+	green := "\033[32m"
+	yellow := "\033[33m"
+	blue := "\033[34m"
+	reset := "\033[0m"
+	bold := "\033[1m"
 
 	banner := fmt.Sprintf(`
 %s    ______     __
