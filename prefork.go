@@ -159,7 +159,31 @@ func (p *Prefork) fork(engine *echo.Echo, workers int, address string, tlsConfig
 		}()
 	}
 
+	printPreforkBanner(os.Getpid(), workers, pids, address)
+
 	return (<-channel).err
+}
+
+func printPreforkBanner(masterPID, workers int, pids []int, address string) {
+	banner := `
+    ______     __
+   / ____/____/ /_  ____
+  / __/ / ___/ __ \/ __ \
+ / /___/ /__/ / / / /_/ /
+/_____/\___/_/ /_/\____/ Prefork
+`
+
+	fmt.Println(banner)
+	fmt.Println("=======================================")
+	fmt.Printf("Master PID   : %d\n", masterPID)
+	fmt.Printf("Listening on : %s\n", address)
+	fmt.Printf("Workers      : %d\n", workers)
+	fmt.Println("Child PIDs   :")
+	for _, pid := range pids {
+		fmt.Printf("   - %d\n", pid)
+	}
+
+	fmt.Println("=======================================")
 }
 
 func watchMaster() {
