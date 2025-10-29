@@ -104,7 +104,7 @@ func (p *Prefork) fork(engine *echo.Echo, workers int, address string, tlsConfig
 
 			go watchMaster()
 
-			return engine.Server.Serve(engine.Listener)
+			return engine.Start(address)
 		}
 
 		engine.Listener = ln
