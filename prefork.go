@@ -104,14 +104,14 @@ func (p *Prefork) fork(engine *echo.Echo, workers int, address string, tlsConfig
 
 			go watchMaster()
 
-			return engine.Start(address)
+			return engine.Server.Serve(ln)
 		}
 
 		engine.Listener = ln
 
 		go watchMaster()
 
-		return engine.Start(address)
+		return engine.Server.Serve(ln)
 	}
 
 	type child struct {
