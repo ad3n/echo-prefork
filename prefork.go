@@ -1,11 +1,13 @@
 package prefork
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
+	"os/signal"
 	"runtime"
 	"strings"
 	"sync"
@@ -99,15 +101,22 @@ func (p *Prefork) fork(engine *echo.Echo, workers int, address string, tlsConfig
 
 		if tlsConfig != nil {
 			ln = tls.NewListener(ln, tlsConfig)
-
-			engine.Listener = ln
-
-			go watchMaster()
-
-			return engine.Server.Serve(ln)
 		}
 
 		engine.Listener = ln
+
+		sigCh := make(chan os.Signal, 1)
+
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+		go func() {
+			<-sigCh
+
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			engine.Shutdown(ctx)
+			os.Exit(0)
+		}()
 
 		go watchMaster()
 
