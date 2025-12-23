@@ -180,7 +180,7 @@ func printPreforkBanner(masterPID, workers int, pids []int, address string) {
 	bold := "\033[1m"
 
 	banner := fmt.Sprintf(`
-%s  ______     __
+%s    ______     __
    / ____/____/ /_  ____
   / __/ / ___/ __ \/ __ \
  / /___/ /__/ / / / /_/ /
